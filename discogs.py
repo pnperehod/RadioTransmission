@@ -28,13 +28,14 @@ def connect_oauth(oauth_info):
 
 def site_request(url, uagent, client):
     tries = 5
+    delay = 3       # in seconds
     while tries > 0:
         try:
             resp, content = client.request(url, headers={'User-Agent': uagent})
         except Exception as e:
             print(e)
             tries = tries - 1
-            time.sleep(3)
+            time.sleep(delay)
             continue
         break
     if tries == 0:
@@ -43,10 +44,15 @@ def site_request(url, uagent, client):
         return None, None
     return resp, content
 
-def do_the_search(artist, title, client):
-    search_url = base_url + '+'.join(artist.split()) + '+' + '+'.join(title.split()) + '&page=1&per_page=100'
+
+def do_the_search(artist, title, master, client):
+    if master:
+        search_url = base_url + '+'.join(artist.split()) + '+' + '+'.join(title.split()) + '&type=master' + '&page=1&per_page=100'
+    else:
+        search_url = base_url + '+'.join(artist.split()) + '+' + '+'.join(title.split()) + '&page=1&per_page=100'
     resp, content = site_request(search_url, user_agent, client)
     return resp, content
+
 
 def no_comma(str):                  # for artist names like surname, name
     is_comma = str.find(',')
@@ -161,11 +167,16 @@ def get_album_cover(song_title, client):
         if artist_web == '':
             return False
 
-    resp, content = do_the_search(artist_web, title_web, client)
-    if content == None:
-        print('Invalid API response {0}.'.format(resp['status']))
-        return False
-    release = json.loads(content.decode('utf-8'))
+    for master in (True, False):
+        resp, content = do_the_search(artist_web, title_web, master, client)
+        if content == None:
+            print('Invalid API response {0}.'.format(resp['status']))
+            return False
+        release = json.loads(content.decode('utf-8'))
+        if release['pagination']['items'] == 0:
+            continue
+        else:
+            break
     if release['pagination']['items'] == 0:              # nothing was found
         return False
 
