@@ -38,7 +38,7 @@ def main():
                 continue
             number = name.split('_')[0]
             song_title = name.split('_')[1]
-            mp4tags.fill_mp4_tags(song_title, dirpath + '/' + fname, client)
+            mp4tags.fill_mp4_tags(song_title, os.path.join(dirpath, fname), client)
 
 
 
